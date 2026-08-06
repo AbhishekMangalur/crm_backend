@@ -5,6 +5,12 @@ from app.core.config import settings
 from app.routes.auth import router as auth_router
 from app.routes.roles import router as roles_router
 from app.routes.users import router as users_router
+from app.routes.sales import router as sales_router
+from app.routes.presale import router as presale_router
+from app.routes.resource_manager import router as resource_manager_router
+from app.routes.account_director import router as account_director_router
+from app.routes.executive import router as executive_router
+from app.core.database import Base, engine
 
 
 app = FastAPI(
@@ -13,6 +19,9 @@ app = FastAPI(
     debug=settings.debug,
 )
 
+@app.on_event("startup")
+def create_tables() -> None:
+    Base.metadata.create_all(bind=engine)
 
 app.add_middleware(
     CORSMiddleware,
@@ -26,6 +35,11 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(roles_router)
 app.include_router(users_router)
+app.include_router(sales_router)
+app.include_router(presale_router)
+app.include_router(resource_manager_router)
+app.include_router(account_director_router)
+app.include_router(executive_router)
 
 
 @app.get("/")
