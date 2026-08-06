@@ -20,6 +20,7 @@ class LoginResponse(BaseModel):
     dashboard_path: str
     user: LoginUserResponse
 
+
 class CurrentUserResponse(BaseModel):
     id: int
     full_name: str

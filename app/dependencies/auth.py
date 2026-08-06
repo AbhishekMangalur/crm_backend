@@ -34,7 +34,7 @@ def get_current_user(
         if not user_id:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token",
+                detail="Invalid access token",
             )
 
         user_id = int(user_id)
@@ -64,18 +64,22 @@ def get_current_user(
             detail="User account is inactive",
         )
 
-    if not user.role or not user.role.is_active:
+    if not user.role:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="User role is inactive or unavailable",
+            detail="User does not have an assigned role",
+        )
+
+    if not user.role.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Assigned role is inactive",
         )
 
     return user
 
 
-def require_roles(
-    *allowed_roles: str,
-) -> Callable:
+def require_roles(*allowed_roles: str) -> Callable:
     def role_checker(
         current_user: User = Depends(get_current_user),
     ) -> User:

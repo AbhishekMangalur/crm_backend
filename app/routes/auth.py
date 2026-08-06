@@ -5,14 +5,13 @@ from sqlalchemy.orm import Session, joinedload
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import create_access_token, verify_password
-from app.models.user import User
 from app.dependencies.auth import get_current_user
+from app.models.user import User
 from app.schemas.auth import (
     CurrentUserResponse,
     LoginRequest,
     LoginResponse,
 )
-
 
 
 router = APIRouter(
@@ -89,7 +88,7 @@ def login(
     if not dashboard_path:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="User role is not allowed to access the CRM",
+            detail="No dashboard configured for this role",
         )
 
     access_token = create_access_token(
@@ -113,6 +112,7 @@ def login(
         },
     )
 
+
 @router.get(
     "/me",
     response_model=CurrentUserResponse,
@@ -122,10 +122,18 @@ def get_logged_in_user(
 ):
     role_name = current_user.role.name
 
+    dashboard_path = DASHBOARD_PATHS.get(role_name)
+
+    if not dashboard_path:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No dashboard configured for this role",
+        )
+
     return CurrentUserResponse(
         id=current_user.id,
         full_name=current_user.full_name,
         email=current_user.email,
         role=role_name,
-        dashboard_path=DASHBOARD_PATHS[role_name],
+        dashboard_path=dashboard_path,
     )

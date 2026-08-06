@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import jwt
-from pwdlib import PasswordHash
+from pwdlib import PasswordHash # type: ignore
 
 from app.core.config import settings
 
