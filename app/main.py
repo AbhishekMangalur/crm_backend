@@ -11,6 +11,7 @@ from app.routes.resource_manager import router as resource_manager_router
 from app.routes.account_director import router as account_director_router
 from app.routes.executive import router as executive_router
 from app.routes.alliance import router as alliance_router
+from app.routes.rfp import router as rfp_router
 from app.core.database import Base, engine
 
 
@@ -42,6 +43,7 @@ app.include_router(resource_manager_router)
 app.include_router(account_director_router)
 app.include_router(executive_router)
 app.include_router(alliance_router)
+app.include_router(rfp_router)
 
 
 @app.get("/")
