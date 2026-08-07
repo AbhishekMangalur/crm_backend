@@ -29,6 +29,13 @@ from app.models.resource_manager import (
     Skill,
 )
 
+from app.models.alliance import (
+    Partner,
+    PartnerCertification,
+    PartnerDealRegistration,
+    PartnerInfluencedOpportunity,
+)
+
 from app.models.executive import ExecutiveKPISnapshot
 
 
@@ -52,4 +59,8 @@ __all__ = [
     "ResourceRequest",
     "ResourceAllocation",
     "ExecutiveKPISnapshot",
+    "Partner",
+    "PartnerDealRegistration",
+    "PartnerInfluencedOpportunity",
+    "PartnerCertification",
 ]

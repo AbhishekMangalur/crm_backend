@@ -12,6 +12,7 @@ from app.models.account_director import (
     AccountOpportunity,
     Contract,
 )
+from app.models.alliance import PartnerInfluencedOpportunity
 from app.models.executive import ExecutiveKPISnapshot
 from app.models.presale import Estimation
 from app.models.resource_manager import (
@@ -376,6 +377,22 @@ def build_snapshot_data(
         month_end,
     )
 
+    partner_influenced_pipeline = (
+        db.query(
+            func.coalesce(
+                func.sum(
+                    PartnerInfluencedOpportunity.influenced_value
+                ),
+                0,
+            )
+        )
+        .filter(
+            PartnerInfluencedOpportunity.status
+            == "ACTIVE"
+        )
+        .scalar()
+    )
+
     return {
         "snapshot_month": normalized_month,
         "total_pipeline_value": (
@@ -403,9 +420,9 @@ def build_snapshot_data(
         "account_expansion_revenue": (
             account_kpis["account_expansion_revenue"]
         ),
-
-        # No partner/co-sell table exists yet.
-        "partner_influenced_pipeline": Decimal("0.00"),
+        "partner_influenced_pipeline": (
+            decimal_or_zero(partner_influenced_pipeline)
+        ),
 
         "active_opportunities": (
             pipeline_kpis["active_opportunities"]
