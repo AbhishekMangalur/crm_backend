@@ -105,6 +105,33 @@ def require_solution(
     return solution
 
 
+MINIMUM_MARGIN_PERCENTAGE = 40.0
+
+
+def apply_margin_approval_rule(
+    data: dict[str, Any],
+) -> dict[str, Any]:
+    margin = float(
+        data.get(
+            "expected_margin_percentage",
+            0,
+        )
+    )
+
+    if margin >= MINIMUM_MARGIN_PERCENTAGE:
+        data["approval_status"] = "READY_FOR_PROPOSAL"
+        data["approved_by"] = None
+        data["approved_at"] = None
+        data["rejection_reason"] = None
+    else:
+        data["approval_status"] = "APPROVAL_REQUIRED"
+        data["approved_by"] = None
+        data["approved_at"] = None
+        data["rejection_reason"] = None
+
+    return data
+
+
 def validate_solution_relations(
     db: Session,
     data: dict[str, Any],
@@ -345,6 +372,8 @@ def calculate_estimation_values(
         )
     )
 
+    data = apply_margin_approval_rule(data)
+
     return data
 
 
@@ -402,6 +431,9 @@ def create_estimation(
     calculated_data = calculate_estimation_values(
         data,
     )
+    calculated_data = apply_margin_approval_rule(
+        calculated_data,
+    )
 
     try:
         return create_record(
@@ -456,6 +488,9 @@ def update_estimation(
         data,
         existing_estimation=estimation,
     )
+    calculated_data = apply_margin_approval_rule(
+        calculated_data,
+    )
 
     try:
         return update_record(
@@ -477,6 +512,14 @@ def approve_estimation(
         estimation_id,
     )
 
+    if estimation.approval_status != "APPROVAL_REQUIRED":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "This estimation does not require approval"
+            ),
+        )
+
     approver = db.get(User, approved_by)
 
     if not approver:
@@ -505,12 +548,12 @@ def approve_estimation(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=(
                 "Only ACCOUNT_DIRECTOR or EXECUTIVE "
-                "can approve an estimation"
+                "can approve low-margin estimations"
             ),
         )
 
     estimation.approval_status = "APPROVED"
-    estimation.approved_by = approved_by
+    estimation.approved_by = approver.id
     estimation.approved_at = datetime.now(timezone.utc)
     estimation.rejection_reason = None
 
@@ -531,6 +574,14 @@ def reject_estimation(
         estimation_id,
     )
 
+    if estimation.approval_status != "APPROVAL_REQUIRED":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "This estimation does not require approval"
+            ),
+        )
+
     approver = db.get(User, approved_by)
 
     if not approver:
@@ -559,7 +610,7 @@ def reject_estimation(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=(
                 "Only ACCOUNT_DIRECTOR or EXECUTIVE "
-                "can reject an estimation"
+                "can reject low-margin estimations"
             ),
         )
 
@@ -570,7 +621,7 @@ def reject_estimation(
         )
 
     estimation.approval_status = "REJECTED"
-    estimation.approved_by = approved_by
+    estimation.approved_by = approver.id
     estimation.approved_at = datetime.now(timezone.utc)
     estimation.rejection_reason = rejection_reason.strip()
 

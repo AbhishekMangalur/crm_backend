@@ -50,6 +50,14 @@ from app.services.account_director_service import (
     update_customer_health_record,
 )
 
+from app.schemas.contract_renewal import (
+    ContractRenewalAlertResponse,
+)
+
+from app.services.contract_renewal_service import (
+    get_upcoming_contract_renewals,
+)
+
 
 router = APIRouter(
     prefix="/api/account-director",
@@ -452,4 +460,18 @@ def delete_account_opportunity_api(
 
     return Response(
         status_code=status.HTTP_204_NO_CONTENT,
+    )
+
+@router.get("/contracts/{contract_id}")
+
+
+@router.get(
+    "/contracts/renewals/upcoming",
+    response_model=list[ContractRenewalAlertResponse],
+)
+def get_upcoming_contract_renewals_api(
+    db: Session = Depends(get_db),
+):
+    return get_upcoming_contract_renewals(
+        db,
     )

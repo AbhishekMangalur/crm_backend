@@ -12,6 +12,19 @@ from app.schemas.auth import (
     LoginRequest,
     LoginResponse,
 )
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from app.schemas.auth import (
+    ForgotPasswordRequest,
+    ForgotPasswordResponse,
+    RegisterRequest,
+    RegisterResponse,
+)
+from app.services.auth_service import (
+    forgot_password,
+    register_user,
+)
 
 
 router = APIRouter(
@@ -136,4 +149,37 @@ def get_logged_in_user(
         email=current_user.email,
         role=role_name,
         dashboard_path=dashboard_path,
+    )
+
+
+@router.post(
+    "/register",
+    response_model=RegisterResponse,
+    status_code=201,
+)
+def register_api(
+    payload: RegisterRequest,
+    db: Session = Depends(get_db),
+):
+    return register_user(
+        db=db,
+        full_name=payload.full_name,
+        email=str(payload.email),
+        role_id=payload.role_id,
+        password=payload.password,
+    )
+
+
+@router.post(
+    "/forgot-password",
+    response_model=ForgotPasswordResponse,
+)
+def forgot_password_api(
+    payload: ForgotPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    return forgot_password(
+        db=db,
+        email=str(payload.email),
+        new_password=payload.new_password,
     )
