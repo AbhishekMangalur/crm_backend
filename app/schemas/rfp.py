@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -42,8 +43,8 @@ class RFPCreate(BaseModel):
         decimal_places=2,
     )
 
-    currency: str = Field(
-        default="INR",
+    currency: Literal["USD"] = Field(
+        default="USD",
         min_length=3,
         max_length=10,
     )
@@ -113,7 +114,7 @@ class RFPPut(BaseModel):
         decimal_places=2,
     )
 
-    currency: str = Field(
+    currency: Literal["USD"] = Field(
         min_length=3,
         max_length=10,
     )
@@ -186,7 +187,7 @@ class RFPPatch(BaseModel):
         decimal_places=2,
     )
 
-    currency: str | None = Field(
+    currency: Literal["USD"] | None = Field(
         default=None,
         min_length=3,
         max_length=10,
@@ -226,7 +227,7 @@ class RFPResponse(BaseModel):
     industry: str | None
     service_type: str | None
     estimated_value: Decimal | None
-    currency: str
+    currency: Literal["USD"]
     received_date: date
     submission_deadline: date
     rfp_status: str

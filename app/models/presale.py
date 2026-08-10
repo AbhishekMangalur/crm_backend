@@ -239,8 +239,8 @@ class Estimation(Base):
     currency: Mapped[str] = mapped_column(
         String(10),
         nullable=False,
-        default="INR",
-        server_default="INR",
+        default="USD",
+        server_default="USD",
     )
 
     approval_status: Mapped[str] = mapped_column(

@@ -95,8 +95,8 @@ class Employee(Base):
     currency: Mapped[str] = mapped_column(
         String(10),
         nullable=False,
-        default="INR",
-        server_default="INR",
+        default="USD",
+        server_default="USD",
     )
 
     availability_status: Mapped[str] = mapped_column(
@@ -431,6 +431,16 @@ class ResourceRequest(Base):
     resource_allocations: Mapped[list["ResourceAllocation"]] = relationship(
         "ResourceAllocation",
         back_populates="resource_request",
+    )
+
+    resource_requirement_id: Mapped[int | None] = mapped_column(
+        ForeignKey(
+            "resource_requirements.id",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+        unique=True,
+        index=True,
     )
 
 

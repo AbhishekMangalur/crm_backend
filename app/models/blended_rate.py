@@ -60,8 +60,8 @@ class BlendedRate(Base):
     currency: Mapped[str] = mapped_column(
         String(10),
         nullable=False,
-        default="INR",
-        server_default="INR",
+        default="USD",
+        server_default="USD",
     )
 
     created_at: Mapped[datetime] = mapped_column(

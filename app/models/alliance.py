@@ -183,8 +183,8 @@ class PartnerDealRegistration(Base):
     currency: Mapped[str] = mapped_column(
         String(10),
         nullable=False,
-        default="INR",
-        server_default="INR",
+        default="USD",
+        server_default="USD",
     )
 
     registered_by: Mapped[int] = mapped_column(
@@ -278,8 +278,8 @@ class PartnerInfluencedOpportunity(Base):
     currency: Mapped[str] = mapped_column(
         String(10),
         nullable=False,
-        default="INR",
-        server_default="INR",
+        default="USD",
+        server_default="USD",
     )
 
     referral_fee: Mapped[Decimal | None] = mapped_column(

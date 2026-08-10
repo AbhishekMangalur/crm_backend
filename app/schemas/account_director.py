@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
@@ -25,7 +26,7 @@ class AccountCreate(BaseModel):
         decimal_places=2,
     )
 
-    currency: str = Field(default="INR", min_length=3, max_length=10)
+    currency: Literal["USD"] = Field(default="USD", min_length=3, max_length=10)
     customer_health_status: str = Field(default="GREEN", max_length=20)
     nps_score: float | None = Field(default=None, ge=-100, le=100)
     sla_status: str | None = Field(default=None, max_length=30)
@@ -49,7 +50,7 @@ class AccountPut(BaseModel):
         decimal_places=2,
     )
 
-    currency: str = Field(min_length=3, max_length=10)
+    currency: Literal["USD"] = Field(min_length=3, max_length=10)
     customer_health_status: str = Field(min_length=2, max_length=20)
     nps_score: float | None = Field(default=None, ge=-100, le=100)
     sla_status: str | None = Field(default=None, max_length=30)
@@ -73,7 +74,7 @@ class AccountPatch(BaseModel):
         decimal_places=2,
     )
 
-    currency: str | None = Field(default=None, min_length=3, max_length=10)
+    currency: Literal["USD"] | None = Field(default=None, min_length=3, max_length=10)
     customer_health_status: str | None = Field(default=None, max_length=20)
     nps_score: float | None = Field(default=None, ge=-100, le=100)
     sla_status: str | None = Field(default=None, max_length=30)
@@ -91,7 +92,7 @@ class AccountResponse(BaseModel):
     primary_contact_phone: str | None
     account_director_id: int
     annual_revenue: Decimal | None
-    currency: str
+    currency: Literal["USD"]
     customer_health_status: str
     nps_score: float | None
     sla_status: str | None
@@ -119,7 +120,7 @@ class ContractCreate(BaseModel):
         decimal_places=2,
     )
 
-    currency: str = Field(default="INR", min_length=3, max_length=10)
+    currency: Literal["USD"] = Field(default="USD", min_length=3, max_length=10)
     start_date: date
     end_date: date
     renewal_date: date | None = None
@@ -154,7 +155,7 @@ class ContractPatch(BaseModel):
         decimal_places=2,
     )
 
-    currency: str | None = Field(default=None, min_length=3, max_length=10)
+    currency: Literal["USD"] | None = Field(default=None, min_length=3, max_length=10)
     start_date: date | None = None
     end_date: date | None = None
     renewal_date: date | None = None
@@ -169,7 +170,7 @@ class ContractResponse(BaseModel):
     contract_number: str
     contract_type: str
     contract_value: Decimal
-    currency: str
+    currency: Literal["USD"]
     start_date: date
     end_date: date
     renewal_date: date | None
@@ -245,7 +246,7 @@ class AccountOpportunityCreate(BaseModel):
         decimal_places=2,
     )
 
-    currency: str = Field(default="INR", min_length=3, max_length=10)
+    currency: Literal["USD"] = Field(default="USD", min_length=3, max_length=10)
     probability: float = Field(default=0, ge=0, le=100)
     expected_close_date: date | None = None
     status: str = Field(default="OPEN", max_length=30)
@@ -269,7 +270,7 @@ class AccountOpportunityPatch(BaseModel):
         decimal_places=2,
     )
 
-    currency: str | None = Field(default=None, min_length=3, max_length=10)
+    currency: Literal["USD"] | None = Field(default=None, min_length=3, max_length=10)
     probability: float | None = Field(default=None, ge=0, le=100)
     expected_close_date: date | None = None
     status: str | None = Field(default=None, max_length=30)
@@ -283,7 +284,7 @@ class AccountOpportunityResponse(BaseModel):
     opportunity_name: str
     service_type: str
     estimated_value: Decimal
-    currency: str
+    currency: Literal["USD"]
     probability: float
     expected_close_date: date | None
     status: str

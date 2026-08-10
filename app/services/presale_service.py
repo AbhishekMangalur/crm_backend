@@ -1,10 +1,19 @@
+from calendar import monthrange
+from datetime import date, datetime, timezone
+from decimal import Decimal, ROUND_HALF_UP
 from typing import Any
 
 from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.models.presale import Solution
+from app.models.presale import (
+    Estimation,
+    Proposal,
+    ResourceRequirement,
+    Solution,
+)
+from app.models.resource_manager import ResourceRequest
 from app.models.sale import Opportunity
 from app.models.user import User
 from app.repositories.presale_repository import (
@@ -13,16 +22,6 @@ from app.repositories.presale_repository import (
     get_all_records,
     get_record_by_id,
     update_record,
-)
-
-from datetime import date, datetime, timezone
-from decimal import Decimal, ROUND_HALF_UP
-
-from app.models.presale import (
-    Estimation,
-    Proposal,
-    ResourceRequirement,
-    Solution,
 )
 
 
@@ -106,6 +105,19 @@ def require_solution(
 
 
 MINIMUM_MARGIN_PERCENTAGE = 40.0
+
+
+def add_months(
+    source_date: date,
+    months: float,
+) -> date:
+    months = int(months)
+
+    year = source_date.year + (source_date.month - 1 + months) // 12
+    month = (source_date.month - 1 + months) % 12 + 1
+    day = min(source_date.day, monthrange(year, month)[1])
+
+    return date(year, month, day)
 
 
 def apply_margin_approval_rule(
@@ -1117,3 +1129,142 @@ def delete_proposal(
         )
     except IntegrityError as error:
         handle_integrity_error(db, error)
+
+
+def create_resource_requirement(
+    db: Session,
+    data: dict,
+    requested_by: int,
+) -> ResourceRequirement:
+
+    solution = db.get(
+        Solution,
+        data["solution_id"],
+    )
+
+    if not solution:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Solution not found",
+        )
+
+    # ---------------------------------------------
+    # Create Presales requirement
+    # ---------------------------------------------
+
+    requirement = ResourceRequirement(
+        **data
+    )
+
+    try:
+        db.add(requirement)
+
+        # Important:
+        # Generates requirement.id without committing.
+        db.flush()
+
+        # -----------------------------------------
+        # Duplicate protection
+        # -----------------------------------------
+
+        existing_request = (
+            db.query(ResourceRequest)
+            .filter(
+                ResourceRequest.resource_requirement_id
+                == requirement.id
+            )
+            .first()
+        )
+
+        if existing_request:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    "A resource request already exists "
+                    "for this resource requirement"
+                ),
+            )
+
+        # -----------------------------------------
+        # Dates
+        # -----------------------------------------
+
+        required_from = date.today()
+
+        required_until = add_months(
+            required_from,
+            requirement.duration_months,
+        )
+
+        # -----------------------------------------
+        # Automatic Resource Manager handoff
+        # -----------------------------------------
+
+        resource_request = ResourceRequest(
+            resource_requirement_id=requirement.id,
+
+            opportunity_id=solution.opportunity_id,
+
+            solution_id=requirement.solution_id,
+
+            requested_role=requirement.role_name,
+
+            required_skill=requirement.skill_name,
+
+            experience_level=(
+                requirement.experience_level
+            ),
+
+            minimum_experience_years=(
+                requirement.minimum_experience_years
+            ),
+
+            quantity=requirement.quantity,
+
+            required_from=required_from,
+            required_until=required_until,
+
+            allocation_percentage=(
+                requirement.allocation_percentage
+            ),
+
+            location_type=requirement.location_type,
+
+            request_status="PENDING",
+
+            requested_by=requested_by,
+
+            notes=(
+                "Automatically generated from "
+                f"Presales Resource Requirement "
+                f"#{requirement.id}"
+            ),
+        )
+
+        db.add(resource_request)
+
+        # Both succeed together.
+        db.commit()
+
+        db.refresh(requirement)
+
+        return requirement
+
+    except HTTPException:
+        db.rollback()
+        raise
+
+    except IntegrityError as error:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Unable to create resource requirement "
+                "and linked resource request"
+            ),
+        ) from error
+
+    except Exception:
+        db.rollback()
+        raise

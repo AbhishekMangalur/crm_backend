@@ -80,3 +80,15 @@ def delete_record(
 ) -> None:
     db.delete(record)
     db.commit()
+
+
+def get_resource_request_by_requirement_id(
+    db: Session,
+    resource_requirement_id: int,
+) -> ResourceRequest | None:
+    return db.scalar(
+        select(ResourceRequest).where(
+            ResourceRequest.resource_requirement_id
+            == resource_requirement_id
+        )
+    )

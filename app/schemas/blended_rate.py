@@ -1,4 +1,5 @@
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -28,8 +29,8 @@ class BlendedRateItem(BaseModel):
         decimal_places=2,
     )
 
-    currency: str = Field(
-        default="INR",
+    currency: Literal["USD"] = Field(
+        default="USD",
         min_length=3,
         max_length=10,
     )
@@ -74,7 +75,7 @@ class BlendedRateItemResponse(BaseModel):
     resource_ratio: Decimal
     bill_rate: Decimal
     cost_rate: Decimal
-    currency: str
+    currency: Literal["USD"]
 
 
 class BlendedRateCalculateResponse(BaseModel):
@@ -90,6 +91,6 @@ class BlendedRateCalculateResponse(BaseModel):
 
     blended_margin_percentage: float
 
-    currency: str
+    currency: Literal["USD"]
 
     rates: list[BlendedRateItemResponse]

@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
@@ -101,8 +102,8 @@ class PartnerDealRegistrationCreate(BaseModel):
         decimal_places=2,
     )
 
-    currency: str = Field(
-        default="INR",
+    currency: Literal["USD"] = Field(
+        default="USD",
         min_length=3,
         max_length=10,
     )
@@ -152,7 +153,7 @@ class PartnerDealRegistrationPatch(BaseModel):
         decimal_places=2,
     )
 
-    currency: str | None = Field(
+    currency: Literal["USD"] | None = Field(
         default=None,
         min_length=3,
         max_length=10,
@@ -171,7 +172,7 @@ class PartnerDealRegistrationResponse(BaseModel):
     registered_on: date | None
     expiry_date: date | None
     expected_incentive: Decimal | None
-    currency: str
+    currency: Literal["USD"]
     registered_by: int
     notes: str | None
     created_at: datetime
@@ -201,8 +202,8 @@ class PartnerInfluencedOpportunityCreate(BaseModel):
         decimal_places=2,
     )
 
-    currency: str = Field(
-        default="INR",
+    currency: Literal["USD"] = Field(
+        default="USD",
         min_length=3,
         max_length=10,
     )
@@ -246,7 +247,7 @@ class PartnerInfluencedOpportunityPatch(BaseModel):
         decimal_places=2,
     )
 
-    currency: str | None = Field(
+    currency: Literal["USD"] | None = Field(
         default=None,
         min_length=3,
         max_length=10,
@@ -270,7 +271,7 @@ class PartnerInfluencedOpportunityResponse(BaseModel):
     opportunity_id: int
     influence_type: str
     influenced_value: Decimal | None
-    currency: str
+    currency: Literal["USD"]
     referral_fee: Decimal | None
     tier_points: int
     status: str

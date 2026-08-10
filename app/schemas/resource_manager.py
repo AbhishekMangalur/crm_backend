@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
@@ -26,7 +27,7 @@ class EmployeeCreate(BaseModel):
         decimal_places=2,
     )
 
-    currency: str = Field(default="INR", min_length=3, max_length=10)
+    currency: Literal["USD"] = Field(default="USD", min_length=3, max_length=10)
     availability_status: str = Field(default="AVAILABLE", max_length=30)
     available_from: date | None = None
 
@@ -56,7 +57,7 @@ class EmployeePut(BaseModel):
         decimal_places=2,
     )
 
-    currency: str = Field(min_length=3, max_length=10)
+    currency: Literal["USD"] = Field(min_length=3, max_length=10)
     availability_status: str = Field(min_length=2, max_length=30)
     available_from: date | None = None
 
@@ -106,7 +107,7 @@ class EmployeePatch(BaseModel):
         decimal_places=2,
     )
 
-    currency: str | None = Field(default=None, min_length=3, max_length=10)
+    currency: Literal["USD"] | None = Field(default=None, min_length=3, max_length=10)
     availability_status: str | None = Field(default=None, max_length=30)
     available_from: date | None = None
 
@@ -130,7 +131,7 @@ class EmployeeResponse(BaseModel):
     location: str | None
     employment_type: str
     cost_rate: Decimal | None
-    currency: str
+    currency: Literal["USD"]
     availability_status: str
     available_from: date | None
     current_utilization_percentage: float

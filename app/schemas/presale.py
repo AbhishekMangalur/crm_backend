@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -174,8 +175,8 @@ class EstimationCreate(BaseModel):
         decimal_places=2,
     )
 
-    currency: str = Field(
-        default="INR",
+    currency: Literal["USD"] = Field(
+        default="USD",
         min_length=3,
         max_length=10,
     )
@@ -218,7 +219,7 @@ class EstimationPut(BaseModel):
         decimal_places=2,
     )
 
-    currency: str = Field(
+    currency: Literal["USD"] = Field(
         min_length=3,
         max_length=10,
     )
@@ -270,7 +271,7 @@ class EstimationPatch(BaseModel):
         decimal_places=2,
     )
 
-    currency: str | None = Field(
+    currency: Literal["USD"] | None = Field(
         default=None,
         min_length=3,
         max_length=10,
@@ -290,7 +291,7 @@ class EstimationResponse(BaseModel):
     billing_amount: Decimal
     expected_profit: Decimal
     expected_margin_percentage: float
-    currency: str
+    currency: Literal["USD"]
     approval_status: str
     approved_by: int | None
     approved_at: datetime | None
@@ -299,6 +300,15 @@ class EstimationResponse(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class EstimationApprovalRequest(BaseModel):
+    approved_by: int = Field(gt=0)
+
+
+class EstimationRejectionRequest(EstimationApprovalRequest):
+    estimation_id: int = Field(gt=0)
+    rejection_reason: str = Field(min_length=1)
 
 
 # =========================================================

@@ -81,8 +81,8 @@ class Account(Base):
     currency: Mapped[str] = mapped_column(
         String(10),
         nullable=False,
-        default="INR",
-        server_default="INR",
+        default="USD",
+        server_default="USD",
     )
 
     customer_health_status: Mapped[str] = mapped_column(
@@ -196,8 +196,8 @@ class Contract(Base):
     currency: Mapped[str] = mapped_column(
         String(10),
         nullable=False,
-        default="INR",
-        server_default="INR",
+        default="USD",
+        server_default="USD",
     )
 
     start_date: Mapped[date] = mapped_column(
@@ -375,8 +375,8 @@ class AccountOpportunity(Base):
     currency: Mapped[str] = mapped_column(
         String(10),
         nullable=False,
-        default="INR",
-        server_default="INR",
+        default="USD",
+        server_default="USD",
     )
 
     probability: Mapped[float] = mapped_column(

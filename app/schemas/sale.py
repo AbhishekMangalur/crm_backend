@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import (
     BaseModel,
@@ -139,7 +140,7 @@ class OpportunityCreate(BaseModel):
         decimal_places=2,
     )
 
-    currency: str = Field(default="INR", min_length=3, max_length=10)
+    currency: Literal["USD"] = Field(default="USD", min_length=3, max_length=10)
     pipeline_stage: str = Field(
         default="PROSPECTING",
         max_length=50,
@@ -167,7 +168,7 @@ class OpportunityPut(BaseModel):
         decimal_places=2,
     )
 
-    currency: str = Field(min_length=3, max_length=10)
+    currency: Literal["USD"] = Field(min_length=3, max_length=10)
     pipeline_stage: str = Field(min_length=2, max_length=50)
     win_probability: float = Field(ge=0, le=100)
     expected_close_date: date | None = None
@@ -208,7 +209,7 @@ class OpportunityPatch(BaseModel):
         decimal_places=2,
     )
 
-    currency: str | None = Field(default=None, max_length=10)
+    currency: Literal["USD"] | None = Field(default=None, max_length=10)
     pipeline_stage: str | None = Field(default=None, max_length=50)
     win_probability: float | None = Field(default=None, ge=0, le=100)
     expected_close_date: date | None = None
@@ -227,7 +228,7 @@ class OpportunityResponse(BaseModel):
     service_type: str
     industry: str | None
     deal_value: Decimal
-    currency: str
+    currency: Literal["USD"]
     pipeline_stage: str
     win_probability: float
     expected_close_date: date | None

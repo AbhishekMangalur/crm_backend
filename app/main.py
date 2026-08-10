@@ -14,7 +14,11 @@ from app.routes.alliance import router as alliance_router
 from app.routes.rfp import router as rfp_router
 from app.routes.blended_rate import router as blended_rate_router
 from app.routes.resource_match import router as resource_match_router
-from app.core.database import Base, engine
+from app.core.database import (
+    Base,
+    engine,
+    normalize_currency_to_usd,
+)
 
 
 app = FastAPI(
@@ -26,6 +30,7 @@ app = FastAPI(
 @app.on_event("startup")
 def create_tables() -> None:
     Base.metadata.create_all(bind=engine)
+    normalize_currency_to_usd()
 
 app.add_middleware(
     CORSMiddleware,

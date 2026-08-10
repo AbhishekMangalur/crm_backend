@@ -187,8 +187,8 @@ class Opportunity(Base):
     currency: Mapped[str] = mapped_column(
         String(10),
         nullable=False,
-        default="INR",
-        server_default="INR",
+        default="USD",
+        server_default="USD",
     )
 
     pipeline_stage: Mapped[str] = mapped_column(

@@ -1,6 +1,7 @@
 from fastapi import (
     APIRouter,
     Depends,
+    HTTPException,
     Query,
     Response,
     status,
@@ -11,9 +12,11 @@ from app.core.database import get_db
 from app.dependencies.auth import get_current_user
 from app.schemas.presale import (
     EstimationCreate,
+    EstimationApprovalRequest,
     EstimationPatch,
     EstimationPut,
     EstimationResponse,
+    EstimationRejectionRequest,
     ProposalCreate,
     ProposalPatch,
     ProposalPut,
@@ -245,37 +248,42 @@ def patch_estimation_api(
     )
 
 
-@router.patch(
+@router.post(
     "/estimations/{estimation_id}/approve",
     response_model=EstimationResponse,
 )
 def approve_estimation_api(
     estimation_id: int,
-    approved_by: int,
+    payload: EstimationApprovalRequest,
     db: Session = Depends(get_db),
 ):
     return approve_estimation(
         db,
         estimation_id,
-        approved_by,
+        payload.approved_by,
     )
 
 
-@router.patch(
+@router.post(
     "/estimations/{estimation_id}/reject",
     response_model=EstimationResponse,
 )
 def reject_estimation_api(
     estimation_id: int,
-    approved_by: int,
-    rejection_reason: str,
+    payload: EstimationRejectionRequest,
     db: Session = Depends(get_db),
 ):
+    if payload.estimation_id != estimation_id:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Estimation ID in the request body must match the path",
+        )
+
     return reject_estimation(
         db,
         estimation_id,
-        approved_by,
-        rejection_reason,
+        payload.approved_by,
+        payload.rejection_reason,
     )
 
 
@@ -307,13 +315,20 @@ def delete_estimation_api(
     response_model=ResourceRequirementResponse,
     status_code=status.HTTP_201_CREATED,
 )
+@router.post(
+    "/resource-requirements",
+    response_model=ResourceRequirementResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_resource_requirement_api(
     payload: ResourceRequirementCreate,
     db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
 ):
     return create_resource_requirement(
-        db,
-        payload.model_dump(),
+        db=db,
+        data=payload.model_dump(),
+        requested_by=current_user.id,
     )
 
 
