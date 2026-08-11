@@ -1,12 +1,16 @@
 from functools import lru_cache
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     app_name: str = "CRM for IT Services API"
     app_version: str = "1.0.0"
-    debug: bool = True
+    debug: bool = Field(
+        default=True,
+        validation_alias="APP_DEBUG",
+    )
 
     database_url: str
 

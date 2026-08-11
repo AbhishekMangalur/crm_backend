@@ -1,5 +1,10 @@
+import logging
+
 from fastapi import FastAPI
+from fastapi import Request
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.exc import SQLAlchemyError
+from starlette.responses import JSONResponse
 
 from app.core.config import settings
 from app.routes.auth import router as auth_router
@@ -17,7 +22,11 @@ from app.routes.resource_match import router as resource_match_router
 from app.routes.employee_import import router as employee_import_router
 from app.routes.customer_health_import import router as customer_health_import_router
 from app.routes.financial_import import router as financial_import_router
+from app.routes.executive_kpi import router as executive_kpi_router
 from app.core.database import Base, engine, normalize_currency_to_usd
+
+
+logger = logging.getLogger(__name__)
 
 
 app = FastAPI(
@@ -28,8 +37,41 @@ app = FastAPI(
 
 @app.on_event("startup")
 def create_tables() -> None:
-    Base.metadata.create_all(bind=engine)
-    normalize_currency_to_usd()
+    try:
+        Base.metadata.create_all(bind=engine)
+        normalize_currency_to_usd()
+        app.state.database_available = True
+    except SQLAlchemyError as error:
+        app.state.database_available = False
+        engine.dispose()
+        logger.warning(
+            "Database initialization failed (%s); "
+            "starting API in degraded mode",
+            error.__class__.__name__,
+        )
+
+
+@app.exception_handler(SQLAlchemyError)
+async def handle_database_error(
+    request: Request,
+    error: SQLAlchemyError,
+) -> JSONResponse:
+    app.state.database_available = False
+    logger.error(
+        "Database request failed for %s: %s",
+        request.url.path,
+        error.__class__.__name__,
+    )
+
+    return JSONResponse(
+        status_code=503,
+        content={
+            "detail": (
+                "Database service is temporarily unavailable. "
+                "Please retry shortly."
+            )
+        },
+    )
 
 app.add_middleware(
     CORSMiddleware,
@@ -55,6 +97,7 @@ app.include_router(resource_match_router)
 app.include_router(employee_import_router)
 app.include_router(customer_health_import_router)
 app.include_router(financial_import_router)
+app.include_router(executive_kpi_router)
 
 
 @app.get("/")
@@ -68,5 +111,22 @@ def root():
 @app.get("/health")
 def health_check():
     return {
-        "status": "healthy",
+        "status": (
+            "healthy"
+            if getattr(
+                app.state,
+                "database_available",
+                False,
+            )
+            else "degraded"
+        ),
+        "database": (
+            "available"
+            if getattr(
+                app.state,
+                "database_available",
+                False,
+            )
+            else "unavailable"
+        ),
     }
