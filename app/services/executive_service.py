@@ -183,7 +183,7 @@ def calculate_margin_kpis(
             "gross_margin_percentage": 0.0,
             "pending_presales_approvals": db.scalar(
                 select(func.count(Estimation.id)).where(
-                    Estimation.approval_status == "PENDING"
+                    Estimation.approval_status == "APPROVAL_REQUIRED"
                 )
             ),
         }
@@ -214,7 +214,7 @@ def calculate_margin_kpis(
 
     pending_presales_approvals = db.scalar(
         select(func.count(Estimation.id)).where(
-            Estimation.approval_status == "PENDING"
+            Estimation.approval_status == "APPROVAL_REQUIRED"
         )
     )
 

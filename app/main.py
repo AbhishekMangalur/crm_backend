@@ -14,11 +14,10 @@ from app.routes.alliance import router as alliance_router
 from app.routes.rfp import router as rfp_router
 from app.routes.blended_rate import router as blended_rate_router
 from app.routes.resource_match import router as resource_match_router
-from app.core.database import (
-    Base,
-    engine,
-    normalize_currency_to_usd,
-)
+from app.routes.employee_import import router as employee_import_router
+from app.routes.customer_health_import import router as customer_health_import_router
+from app.routes.financial_import import router as financial_import_router
+from app.core.database import Base, engine, normalize_currency_to_usd
 
 
 app = FastAPI(
@@ -53,6 +52,9 @@ app.include_router(alliance_router)
 app.include_router(rfp_router)
 app.include_router(blended_rate_router)
 app.include_router(resource_match_router)
+app.include_router(employee_import_router)
+app.include_router(customer_health_import_router)
+app.include_router(financial_import_router)
 
 
 @app.get("/")

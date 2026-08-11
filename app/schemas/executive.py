@@ -45,3 +45,15 @@ class ExecutiveKPISnapshotResponse(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class FinancialSummaryResponse(BaseModel):
+    total_records: int
+    actual_revenue: Decimal
+    actual_cost: Decimal
+    actual_profit: Decimal
+    actual_margin_percentage: Decimal
+    projected_margin_percentage: Decimal | None
+    margin_variance: Decimal | None
+    timesheet_utilization_percentage: Decimal | None
+    currency: str

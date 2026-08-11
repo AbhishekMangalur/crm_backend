@@ -38,6 +38,7 @@ from app.models.alliance import (
 
 from app.models.executive import ExecutiveKPISnapshot
 from app.models.blended_rate import BlendedRate
+from app.models.financial import FinancialActual
 
 
 __all__ = [
@@ -65,4 +66,5 @@ __all__ = [
     "PartnerInfluencedOpportunity",
     "PartnerCertification",
     "BlendedRate",
+    "FinancialActual",
 ]
