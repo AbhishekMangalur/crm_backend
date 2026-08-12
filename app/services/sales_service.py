@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Any
 
 from fastapi import HTTPException, status
@@ -199,6 +200,9 @@ def create_opportunity(
     db: Session,
     data: dict[str, Any],
 ) -> Opportunity:
+    if data.get("deal_value") is None:
+        data["deal_value"] = Decimal("0.00")
+
     validate_opportunity_relations(db, data)
 
     try:
@@ -233,6 +237,9 @@ def update_opportunity(
     data: dict[str, Any],
 ) -> Opportunity:
     opportunity = require_opportunity(db, opportunity_id)
+
+    if "deal_value" in data and data["deal_value"] is None:
+        data["deal_value"] = Decimal("0.00")
 
     validate_opportunity_relations(db, data)
 

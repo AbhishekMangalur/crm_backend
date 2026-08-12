@@ -344,11 +344,11 @@ class ResourceRequirementCreate(BaseModel):
         ge=1,
     )
 
-    location_type: str = Field(
-        default="OFFSHORE",
-        min_length=2,
-        max_length=30,
-    )
+    location_type: Literal[
+        "ONSHORE",
+        "OFFSHORE",
+        "NEARSHORE",
+    ] = "OFFSHORE"
 
     duration_months: float | None = Field(
         default=None,
@@ -403,10 +403,11 @@ class ResourceRequirementPut(BaseModel):
     minimum_experience_years: float = Field(ge=0)
     quantity: int = Field(ge=1)
 
-    location_type: str = Field(
-        min_length=2,
-        max_length=30,
-    )
+    location_type: Literal[
+        "ONSHORE",
+        "OFFSHORE",
+        "NEARSHORE",
+    ]
 
     duration_months: float | None = Field(
         default=None,
@@ -471,11 +472,11 @@ class ResourceRequirementPatch(BaseModel):
         ge=1,
     )
 
-    location_type: str | None = Field(
-        default=None,
-        min_length=2,
-        max_length=30,
-    )
+    location_type: Literal[
+        "ONSHORE",
+        "OFFSHORE",
+        "NEARSHORE",
+    ] | None = None
 
     duration_months: float | None = Field(
         default=None,

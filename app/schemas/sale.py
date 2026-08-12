@@ -134,7 +134,8 @@ class OpportunityCreate(BaseModel):
     service_type: str = Field(min_length=2, max_length=100)
     industry: str | None = Field(default=None, max_length=100)
 
-    deal_value: Decimal = Field(
+    deal_value: Decimal | None = Field(
+        default=None,
         ge=0,
         max_digits=14,
         decimal_places=2,
@@ -162,7 +163,8 @@ class OpportunityPut(BaseModel):
     service_type: str = Field(min_length=2, max_length=100)
     industry: str | None = Field(default=None, max_length=100)
 
-    deal_value: Decimal = Field(
+    deal_value: Decimal | None = Field(
+        default=None,
         ge=0,
         max_digits=14,
         decimal_places=2,
