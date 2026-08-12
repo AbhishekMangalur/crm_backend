@@ -4,7 +4,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from typing import Any
 
 from fastapi import HTTPException, status
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.models.presale import (
@@ -14,7 +14,7 @@ from app.models.presale import (
     Solution,
 )
 from app.models.resource_manager import ResourceRequest
-from app.models.sale import Opportunity
+from app.models.sale import Lead, Opportunity
 from app.models.user import User
 from app.repositories.presale_repository import (
     create_record,
@@ -518,13 +518,16 @@ def approve_estimation(
     db: Session,
     estimation_id: int,
     approved_by: int,
-) -> Estimation:
+) -> dict[str, Any]:
     estimation = require_estimation(
         db,
         estimation_id,
     )
 
-    if estimation.approval_status != "APPROVAL_REQUIRED":
+    if estimation.approval_status not in {
+        "APPROVAL_REQUIRED",
+        "APPROVED",
+    }:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(
@@ -564,15 +567,79 @@ def approve_estimation(
             ),
         )
 
-    estimation.approval_status = "APPROVED"
-    estimation.approved_by = approver.id
-    estimation.approved_at = datetime.now(timezone.utc)
-    estimation.rejection_reason = None
+    solution = db.get(Solution, estimation.solution_id)
 
-    db.commit()
-    db.refresh(estimation)
+    if not solution:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The estimation is not linked to an existing solution",
+        )
 
-    return estimation
+    opportunity = db.get(Opportunity, solution.opportunity_id)
+
+    if not opportunity:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The solution is not linked to an existing opportunity",
+        )
+
+    lead = (
+        db.get(Lead, opportunity.lead_id)
+        if opportunity.lead_id is not None
+        else None
+    )
+
+    if opportunity.lead_id is not None and lead is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The opportunity is linked to a lead that no longer exists",
+        )
+
+    try:
+        # Approval and commercial synchronization must commit atomically.
+        estimation.approval_status = "APPROVED"
+        estimation.approved_by = approver.id
+        estimation.approved_at = (
+            estimation.approved_at or datetime.now(timezone.utc)
+        )
+        estimation.rejection_reason = None
+
+        opportunity.deal_value = estimation.billing_amount
+
+        if lead is not None:
+            lead.estimated_value = estimation.billing_amount
+
+        db.flush()
+        db.commit()
+    except SQLAlchemyError as error:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=(
+                "Estimation approval failed; commercial values were not synchronized"
+            ),
+        ) from error
+
+    response = {
+        column.name: getattr(estimation, column.name)
+        for column in Estimation.__table__.columns
+    }
+    response.update(
+        {
+            "opportunity_id": opportunity.id,
+            "opportunity_deal_value": opportunity.deal_value,
+            "lead_id": lead.id if lead is not None else None,
+            "lead_estimated_value": (
+                lead.estimated_value if lead is not None else None
+            ),
+            "message": (
+                "Estimation approved and commercial values "
+                "synchronized successfully."
+            ),
+        }
+    )
+
+    return response
 
 
 def reject_estimation(

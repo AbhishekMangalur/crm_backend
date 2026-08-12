@@ -306,6 +306,14 @@ class EstimationApprovalRequest(BaseModel):
     approved_by: int = Field(gt=0)
 
 
+class EstimationApprovalResponse(EstimationResponse):
+    opportunity_id: int
+    opportunity_deal_value: Decimal
+    lead_id: int | None
+    lead_estimated_value: Decimal | None
+    message: str
+
+
 class EstimationRejectionRequest(EstimationApprovalRequest):
     estimation_id: int = Field(gt=0)
     rejection_reason: str = Field(min_length=1)

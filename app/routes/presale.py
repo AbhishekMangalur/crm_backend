@@ -13,6 +13,7 @@ from app.dependencies.auth import get_current_user
 from app.schemas.presale import (
     EstimationCreate,
     EstimationApprovalRequest,
+    EstimationApprovalResponse,
     EstimationPatch,
     EstimationPut,
     EstimationResponse,
@@ -250,7 +251,7 @@ def patch_estimation_api(
 
 @router.post(
     "/estimations/{estimation_id}/approve",
-    response_model=EstimationResponse,
+    response_model=EstimationApprovalResponse,
 )
 def approve_estimation_api(
     estimation_id: int,

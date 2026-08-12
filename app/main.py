@@ -23,6 +23,7 @@ from app.routes.employee_import import router as employee_import_router
 from app.routes.customer_health_import import router as customer_health_import_router
 from app.routes.financial_import import router as financial_import_router
 from app.routes.executive_kpi import router as executive_kpi_router
+from app.routes.presales_template import router as presales_template_router
 from app.core.database import Base, engine, normalize_currency_to_usd
 
 
@@ -98,6 +99,7 @@ app.include_router(employee_import_router)
 app.include_router(customer_health_import_router)
 app.include_router(financial_import_router)
 app.include_router(executive_kpi_router)
+app.include_router(presales_template_router)
 
 
 @app.get("/")
