@@ -130,7 +130,7 @@ def apply_margin_approval_rule(
         )
     )
 
-    if margin >= MINIMUM_MARGIN_PERCENTAGE:
+    if margin > MINIMUM_MARGIN_PERCENTAGE:
         data["approval_status"] = "READY_FOR_PROPOSAL"
         data["approved_by"] = None
         data["approved_at"] = None
@@ -142,6 +142,51 @@ def apply_margin_approval_rule(
         data["rejection_reason"] = None
 
     return data
+
+
+def synchronize_estimation_commercial_values(
+    db: Session,
+    estimation: Estimation,
+) -> tuple[Opportunity, Lead | None]:
+    """Copy an accepted estimation's billing value to its sales records.
+
+    The caller owns the transaction so the estimation status and commercial
+    values are always committed (or rolled back) together.
+    """
+    solution = db.get(Solution, estimation.solution_id)
+
+    if not solution:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The estimation is not linked to an existing solution",
+        )
+
+    opportunity = db.get(Opportunity, solution.opportunity_id)
+
+    if not opportunity:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The solution is not linked to an existing opportunity",
+        )
+
+    lead = (
+        db.get(Lead, opportunity.lead_id)
+        if opportunity.lead_id is not None
+        else None
+    )
+
+    if opportunity.lead_id is not None and lead is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The opportunity is linked to a lead that no longer exists",
+        )
+
+    opportunity.deal_value = estimation.billing_amount
+
+    if lead is not None:
+        lead.estimated_value = estimation.billing_amount
+
+    return opportunity, lead
 
 
 def validate_solution_relations(
@@ -448,13 +493,33 @@ def create_estimation(
     )
 
     try:
-        return create_record(
-            db,
-            Estimation,
-            calculated_data,
-        )
+        estimation = Estimation(**calculated_data)
+        db.add(estimation)
+        db.flush()
+
+        if estimation.approval_status == "READY_FOR_PROPOSAL":
+            synchronize_estimation_commercial_values(
+                db,
+                estimation,
+            )
+
+        db.commit()
+        db.refresh(estimation)
+        return estimation
     except IntegrityError as error:
         handle_integrity_error(db, error)
+    except HTTPException:
+        db.rollback()
+        raise
+    except SQLAlchemyError as error:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=(
+                "Estimation creation failed; commercial values were not "
+                "synchronized"
+            ),
+        ) from error
 
 
 def get_estimations(
@@ -505,13 +570,32 @@ def update_estimation(
     )
 
     try:
-        return update_record(
-            db,
-            estimation,
-            calculated_data,
-        )
+        for field_name, value in calculated_data.items():
+            setattr(estimation, field_name, value)
+
+        if estimation.approval_status == "READY_FOR_PROPOSAL":
+            synchronize_estimation_commercial_values(
+                db,
+                estimation,
+            )
+
+        db.commit()
+        db.refresh(estimation)
+        return estimation
     except IntegrityError as error:
         handle_integrity_error(db, error)
+    except HTTPException:
+        db.rollback()
+        raise
+    except SQLAlchemyError as error:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=(
+                "Estimation update failed; commercial values were not "
+                "synchronized"
+            ),
+        ) from error
 
 
 def approve_estimation(
@@ -567,34 +651,6 @@ def approve_estimation(
             ),
         )
 
-    solution = db.get(Solution, estimation.solution_id)
-
-    if not solution:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="The estimation is not linked to an existing solution",
-        )
-
-    opportunity = db.get(Opportunity, solution.opportunity_id)
-
-    if not opportunity:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="The solution is not linked to an existing opportunity",
-        )
-
-    lead = (
-        db.get(Lead, opportunity.lead_id)
-        if opportunity.lead_id is not None
-        else None
-    )
-
-    if opportunity.lead_id is not None and lead is None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="The opportunity is linked to a lead that no longer exists",
-        )
-
     try:
         # Approval and commercial synchronization must commit atomically.
         estimation.approval_status = "APPROVED"
@@ -604,13 +660,16 @@ def approve_estimation(
         )
         estimation.rejection_reason = None
 
-        opportunity.deal_value = estimation.billing_amount
-
-        if lead is not None:
-            lead.estimated_value = estimation.billing_amount
+        opportunity, lead = synchronize_estimation_commercial_values(
+            db,
+            estimation,
+        )
 
         db.flush()
         db.commit()
+    except HTTPException:
+        db.rollback()
+        raise
     except SQLAlchemyError as error:
         db.rollback()
         raise HTTPException(
