@@ -3,6 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.dependencies.auth import get_current_user
 from app.models.role import Role
 from app.schemas.role import RoleCreate, RoleResponse
 
@@ -26,6 +27,7 @@ ALLOWED_ROLES = {
     "",
     response_model=RoleResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(get_current_user)],
 )
 def create_role(
     role_data: RoleCreate,
@@ -86,6 +88,7 @@ def get_roles(
 @router.get(
     "/{role_id}",
     response_model=RoleResponse,
+    dependencies=[Depends(get_current_user)],
 )
 def get_role(
     role_id: int,

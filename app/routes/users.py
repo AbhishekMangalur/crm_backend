@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.core.database import get_db
 from app.core.security import hash_password
+from app.dependencies.auth import get_current_user
 from app.models.role import Role
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse
@@ -12,6 +13,7 @@ from app.schemas.user import UserCreate, UserResponse
 router = APIRouter(
     prefix="/api/users",
     tags=["Users"],
+    dependencies=[Depends(get_current_user)],
 )
 
 

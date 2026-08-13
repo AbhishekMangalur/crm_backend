@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.dependencies.auth import get_current_user
 from app.schemas.alliance import (
     PartnerCreate,
     PartnerPatch,
@@ -50,6 +51,7 @@ from app.services.alliance_service import (
 router = APIRouter(
     prefix="/api/alliance",
     tags=["Alliance"],
+    dependencies=[Depends(get_current_user)],
 )
 
 
